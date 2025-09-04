@@ -1,0 +1,442 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.EmployeeVM
+@inject My_Core_Project.Services.IEmployee emp
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="border-bottom pb-2 mb-3">
+    <h4 class="modal-title text-center w-100 fw-bold text-success d-flex align-items-center justify-content-center">
+        <i class="bi bi-people-fill me-2 fs-4"></i> Employee's
+    </h4>
+</div>
+<hr />
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Left Column: Form -->
+        <div class="col-md-3">
+            <div class="card shadow rounded">
+                <div class="card-header bg-gradient bg-primary text-white d-flex align-items-center justify-content-between rounded-top px-4 py-3 shadow-sm">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-person-plus me-2 fs-4"></i> Add New Employee
+                    </h5>
+                </div>
+                <div class="card-body bg-light">
+                    
+
+                    <form id="employeeForm" enctype="multipart/form-data" asp-action="Index" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                        <input type="hidden" id="EmployeeId" name="EmployeeId" value="0" />
+
+                        <div class="form-group mb-2">
+                            <label asp-for="FirstName"></label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="LastName"></label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="Email"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="Phone"></label>
+                            <input asp-for="Phone" class="form-control" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="Gender"></label>
+                            <select asp-for="Gender" class="form-control">
+                                <option value="">--Select Gender--</option>
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                            </select>
+                            <span asp-validation-for="Gender" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="DateOfBirth"></label>
+                            <input asp-for="DateOfBirth" class="form-control" type="date" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="JoinDate"></label>
+                            <input asp-for="JoinDate" class="form-control" type="date" />
+                            <span asp-validation-for="JoinDate" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="DepartmentId">Department</label>
+                            <select asp-for="DepartmentId" asp-items="ViewBag.DepartmentList" class="form-select">
+                                <option value="">--Select Department--</option>
+                            </select>
+                            <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="DesignationId">Designation</label>
+                            <select asp-for="DesignationId" asp-items="ViewBag.DesignationList" class="form-select">
+                                <option value="">--Select Designation--</option>
+                            </select>
+                            <span asp-validation-for="DesignationId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="EmploymentType"></label>
+                            <input asp-for="EmploymentType" class="form-control" />
+                            <span asp-validation-for="EmploymentType" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label asp-for="Status"></label>
+                            <select asp-for="Status" class="form-control">
+                                <option value="">--Select Status--</option>
+                                <option>Active</option>
+                                <option>Inactive</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="ProfileImage"></label>
+                            <input asp-for="ProfileImage" class="form-control" type="file" name="ProfileImageFile" />
+                            <span asp-validation-for="ProfileImage" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-person-plus"></i> Create
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Table -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient bg-secondary text-white d-flex align-items-center justify-content-between rounded-top px-4 py-3 shadow-sm">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-card-list me-2 fs-4"></i> Employee List
+                    </h5>
+                </div>
+                <div class="card-body ">
+                    <table d="employeeTable" class="table table-bordered table-hover table-striped mb-0">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>#</th>
+                                <th>Profile</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Gender</th>
+                                <th>DoB</th>
+                                <th>DoJ</th>
+                                <th>Department</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody">
+                            @if (ViewBag.EmployeeList != null && ViewBag.EmployeeList.Count > 0)
+                            {
+                                int count = 1;
+                                foreach (var emp in emp.GetAllEmployees()@*  ViewBag.EmployeeList as IEnumerable<EmployeeVM> *@)
+                                {
+                                    <tr>
+                                        <td>@count</td>
+                                        <td>
+                                            >
+                                            ${emp.profileImageBase64
+                                            ? `<img src="data:image/png;base64,${emp.profileImageBase64}" width="40" height="40" class="rounded-circle" />`
+                                            : 'N/A'}
+                                        </td>
+                                        <td>@emp.FirstName @emp.LastName</td>
+                                        <td>@emp.Email</td>
+                                        <td>@emp.Phone</td>
+                                        <td>@(emp.Gender == "M" ? "Male" : emp.Gender == "F" ? "Female" : "-")</td>
+                                        <td>@(emp.DateOfBirth?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                        <td>@(emp.JoinDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                        <td>@emp.DepartmentId</td>
+                                        <td>@emp.DesignationId</td>
+                                        <td>
+                                            <span class="badge @(emp.Status == "Active" ? "bg-success" : "bg-secondary")">@emp.Status</span>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-warning me-1 edit-btn" data-id="@emp.EmployeeId">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            >
+                                            <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="${emp.employeeId}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    count++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="12" class="text-center text-muted">No employees found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+   <script>
+        $(document).ready(function() {
+            loadEmployeeList();
+
+            // 📧 Email Validation
+                   $("#Email").blur(function() {
+                        var email = $(this).val().trim();
+                        if (!email) return;
+                        $.ajax({
+                            url: `/Employee/CheckEmailExist?email=${email}`,
+                            type: "GET",
+                            dataType: "json",
+                            success: function(data) {
+                                let $errorSpan = $("span[data-valmsg-for='Email']");
+                                if (data.code === -1) {
+                                    $errorSpan.text(data.message).addClass("field-validation-error").removeClass("field-validation-valid");
+                                    $("#Email").addClass("input-error");
+                                } else {
+                                    $errorSpan.text("").removeClass("field-validation-error").addClass("field-validation-valid");
+                                    $("#Email").removeClass("input-error");
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.log("AJAX error: " + error);
+                            },
+                        });
+                   });
+
+                    // 📱 Phone Validation
+                    $("#Phone").blur(function() {
+                        var phone = $(this).val().trim();
+                        if (!phone) return;
+                        $.ajax({
+                            url: `@Url.Action("CheckMobileExist", "Employee")?mobile=${phone}`,
+                            type: "GET",
+                            dataType: "json",
+                            success: function(data) {
+                                let $errorSpan = $("span[data-valmsg-for='Phone']");
+                                if (data.code === -1) {
+                                    $errorSpan.text(data.message).addClass("field-validation-error").removeClass("field-validation-valid");
+                                    $("#Phone").addClass("input-error");
+                                } else {
+                                    $errorSpan.text("").removeClass("field-validation-error").addClass("field-validation-valid");
+                                    $("#Phone").removeClass("input-error");
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.log("AJAX error: " + error);
+                            },
+                        });
+                    });
+
+            // ✏️ Edit Button Click
+            $(document).on("click", ".edit-btn", function() {
+                var id = $(this).data("id");
+                $.ajax({
+                    url: `@Url.Action("GetEmployeeById", "Employee")?id=${id}`,
+                    type: "GET",
+                    success: function(res) {
+                        $("#EmployeeId").val(res.employeeId);
+                        $("#FirstName").val(res.firstName);
+                        $("#LastName").val(res.lastName);
+                        $("#Email").val(res.email);
+                        $("#Phone").val(res.phone);
+                        $("#Gender").val(res.gender);
+                        $("#DateOfBirth").val(res.dateOfBirth?.split("T")[0]);
+                        $("#JoinDate").val(res.joinDate?.split("T")[0]);
+                        $("#DepartmentId").val(res.departmentId);
+                        $("#DesignationId").val(res.designationId);
+                        $("#EmploymentType").val(res.employmentType);
+                        $("#Status").val(res.status);
+
+                        $("html, body").animate({
+                                scrollTop: $(".card").offset().top,
+                            },
+                            500
+                        );
+
+                        $(".btn-success").html('<i class="bi bi-pencil"></i> Update');
+                        loadEmployeeList();
+                    },
+                });
+            });
+
+            $(document).on("click", ".btn-delete", function(event) {
+                event.preventDefault();
+                var id = $(this).data("id");
+                var row = $(this).closest("tr");
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Yes, delete it!",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/Employee/Delete",
+                            type: "POST",
+                            data: {
+                                id: id
+                            },
+                            success: function(res) {
+                                if (res.code === 0) {
+                                    Swal.fire("Deleted!", res.message, "success");
+                                    row.remove();
+                                    // Optionally reload list
+                                    // loadEmployeeList();
+                                } else {
+                                    Swal.fire("Error!", res.message, "error");
+                                }
+                            },
+                           error: function (xhr) {
+                                if (xhr.status === 403) {
+                                    var res = JSON.parse(xhr.responseText);
+                                    Swal.fire('Access Denied', res.message, 'error');
+                                } else {
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+            // 📝 Submit Form
+            $("#employeeForm").on("submit", function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                $.ajax({
+                    type: "POST",
+                    url: "/Employee/Index",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        if (response.code === 0) {
+                            Swal.fire({
+                                icon: "success",
+                                title: response.message,
+                                showConfirmButton: false,
+                            });
+                            $("#employeeForm")[0].reset();
+                            $("#EmployeeId").val(0);
+                            loadEmployeeList();
+                        } else if (response.code === -2) {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Validation Failed",
+                                text: response.message,
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: response.message,
+                            });
+                        }
+                    },
+                    error: function (xhr) {
+                                if (xhr.status === 403) {
+                                    var res = JSON.parse(xhr.responseText);
+                                    Swal.fire('Access Denied', res.message, 'error');
+                                } else {
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                            }
+                });
+            });
+
+            // 🔄 Load Employee Table
+            function loadEmployeeList() {
+                $.ajax({
+                    url: "/Employee/GetAll",
+                    type: "GET",
+                    dataType: "json",
+                    cache: false,
+                    success: function(data) {
+                        let html = "";
+                        $.each(data, function(i, emp) {
+                            html += `<tr>
+                                <td>${i + 1}</td>
+                                <td>${emp.profileImageBase64 ? `<img src="data:image/png;base64,${emp.profileImageBase64}" width="40" height="40" class="rounded-circle" />` : "N/A"}</td>
+                                <td>${emp.firstName} ${emp.lastName}</td>
+                                <td>${emp.email}</td>
+                                <td>${emp.phone}</td>
+                                <td>${emp.gender == "M" ? "Male" : emp.gender == "F" ? "Female" : "-"}</td>
+                                <td>${emp.dateOfBirth?.split("T")[0] ?? "-"}</td>
+                                <td>${emp.joinDate?.split("T")[0] ?? "-"}</td>
+                                <td>${emp.departmentName}</td>
+                                <td>${emp.designationName}</td>
+                                <td><span class="badge ${emp.status == "Active" ? "bg-success" : "bg-secondary"}">${emp.status}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning edit-btn" data-id="${emp.employeeId}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="${emp.employeeId}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+
+                        $("#employeeTableBody").html(html);
+
+                        // Destroy existing DataTable before re-initializing (avoids error)
+                        if ($.fn.DataTable.isDataTable("#employeeTable")) {
+                            $("#employeeTable").DataTable().destroy();
+                        }
+                        $("#employeeTable").DataTable({
+                            responsive: true,
+                            pageLength: 10,
+                            dom: "<'row mb-2'<'col-md-6'><'col-md-6 text-end'f>>" + "<'row'<'col-12'tr>>" +
+                                "<'row'<'col-md-6'i><'col-md-6 text-end'p>>",
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.log("Failed to load employee list:", error);
+                    },
+                });
+            }
+            // Ensure loadEmployeeList is accessible in this scope
+            window.loadEmployeeList = loadEmployeeList;
+        });
+    </script>
+   
+
+
+}

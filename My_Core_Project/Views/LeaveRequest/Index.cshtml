@@ -1,0 +1,383 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.LeaveRequestVM
+
+@{
+    ViewData["Title"] = "Leave Request Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* Actions column fixed width */
+    #leaveRequestTable td.action-btns {
+        white-space: nowrap;
+        width: 120px;
+    }
+
+        /* Buttons styling */
+        #leaveRequestTable td.action-btns .btn {
+            padding: 4px 8px;
+            line-height: 1;
+        }
+
+        /* Icon color always white */
+        #leaveRequestTable td.action-btns i {
+            color: white;
+        }
+
+    /* Badge color classes */
+    .badge-Pending {
+        background-color: orange;
+        color: white;
+    }
+
+    .badge-Approved {
+        background-color: green;
+        color: white;
+    }
+
+    .badge-Rejected {
+        background-color: red;
+        color: white;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Left: Form -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0" id="formTitle"><i class="fas fa-plus-circle"></i> Add Leave Request</h5>
+                </div>
+                <div class="card-body">
+                    <form id="leaveRequestForm" autocomplete="off">
+                        <input type="hidden" id="leaveId" name="LeaveId" value="0" />
+
+                        <div class="mb-3">
+                            <label for="employeeId" class="form-label">Employee <span class="text-danger">*</span></label>
+                            <select id="employeeId" name="EmployeeId" class="form-select">
+                                <option value="">Select Employee</option>
+                            </select>
+                            <small class="text-danger" id="employeeId-error"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="leaveType" class="form-label">Leave Type <span class="text-danger">*</span></label>
+                            <select id="leaveType" name="LeaveType" class="form-select" required>
+                                <option value="">Select Leave Type</option>
+                                <option value="Sick Leave">Sick Leave</option>
+                                <option value="Casual Leave">Casual Leave</option>
+                                <option value="Annual Leave">Annual Leave</option>
+                                <option value="Maternity Leave">Maternity Leave</option>
+                                <option value="Paternity Leave">Paternity Leave</option>
+                                <option value="Emergency Leave">Emergency Leave</option>
+                            </select>
+                            <small class="text-danger" id="leaveType-error"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fromDate" class="form-label">From Date <span class="text-danger">*</span></label>
+                            <input type="date" id="fromDate" name="FromDate" class="form-control" required />
+                            <small class="text-danger" id="fromDate-error"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="toDate" class="form-label">To Date <span class="text-danger">*</span></label>
+                            <input type="date" id="toDate" name="ToDate" class="form-control" required />
+                            <small class="text-danger" id="toDate-error"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason <span class="text-danger">*</span></label>
+                            <textarea id="reason" name="Reason" class="form-control" rows="2" required></textarea>
+                            <small class="text-danger" id="reason-error"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select id="status" name="Status" class="form-select">
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                            <small class="text-danger" id="status-error"></small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success" id="saveLeaveRequestBtn">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="resetFormBtn">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Table -->
+        <div class="col-lg-8 col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Leave Requests</h5>
+                </div>
+                <div class="card-body">
+                    <table id="leaveRequestTable" class="table table-bordered table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Leave ID</th>
+                                <th>Employee Name</th>
+                                <th>Leave Type</th>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th >Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        let leaveTable = null;
+
+        $(document).ready(function () {
+            loadEmployees();
+            loadLeaveRequests();
+
+            $('#leaveRequestForm').on('submit', function (e) {
+                e.preventDefault();
+                saveLeaveRequest();
+            });
+
+            $('#resetFormBtn').on('click', function () {
+                resetForm();
+            });
+        });
+
+        function loadEmployees() {
+            $.ajax({
+                url: '@Url.Action("GetAllEmployees", "LeaveRequest")',
+                type: 'GET',
+                success: function (response) {
+                    const $select = $('#employeeId');
+                    $select.empty().append('<option value="">Select Employee</option>');
+                    if (response && response.length) {
+                        response.forEach(emp => {
+                            $select.append(
+                                `<option value="${emp.employeeId}">${emp.firstName} ${emp.lastName ? emp.lastName : ''}</option>`
+                            );
+                        });
+                    }
+                }
+            });
+        }
+
+                function loadLeaveRequests() {
+                $.ajax({
+                    url: '@Url.Action("GetAllLeaveRequests", "LeaveRequest")',
+                    type: 'GET',
+                    success: function (response) {
+                        if (leaveTable && $.fn.DataTable.isDataTable('#leaveRequestTable')) {
+                            leaveTable.clear().destroy();
+                        }
+
+                        const $body = $('#leaveRequestTable tbody');
+                        $body.empty();
+
+                        if (response && response.length) {
+                            response.forEach(leave => {
+                                $body.append(`
+                                    <tr>
+                                        <td>${leave.leaveId || ''}</td>
+                                        <td>${leave.employeeName || 'Unknown Employee'}</td>
+                                        <td>${leave.leaveType || ''}</td>
+                                        <td>${formatDate(leave.fromDate)}</td>
+                                        <td>${formatDate(leave.toDate)}</td>
+                                        <td>${leave.reason || ''}</td>
+                                        <td>
+                                            <span class="badge ${getStatusBadgeClass(leave.status || 'Pending')}">
+                                                ${leave.status || 'Pending'}
+                                            </span>
+                                        </td>
+                                        <td class="text-center action-btns">
+                                            <button type="button" class="btn btn-sm btn-primary" title="Edit" onclick="editLeaveRequest(${leave.leaveId})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger" title="Delete" onclick="deleteLeaveRequest(${leave.leaveId})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            $body.append('<tr><td colspan="8" class="text-center">No leave requests found</td></tr>');
+                        }
+
+                        leaveTable = $('#leaveRequestTable').DataTable({
+                            responsive: true,
+                            lengthChange: false,
+                            autoWidth: false,
+                            destroy: true
+                        });
+                    }
+                });
+            }
+
+
+        window.editLeaveRequest = function (id) {
+            $.ajax({
+                url: '@Url.Action("GetLeaveRequestById", "LeaveRequest")',
+                type: 'POST',
+                data: { id },
+                success: function (leave) {
+                    if (leave) {
+                        $('#formTitle').text('Edit Leave Request');
+                        $('#leaveId').val(leave.leaveId);
+                        $('#employeeId').val(leave.employeeId);
+                        $('#leaveType').val(leave.leaveType);
+                        $('#fromDate').val(formatDateForInput(leave.fromDate));
+                        $('#toDate').val(formatDateForInput(leave.toDate));
+                        $('#reason').val(leave.reason);
+                        $('#status').val(leave.status || 'Pending');
+                        clearValidationErrors();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+            });
+        }
+
+        window.deleteLeaveRequest = function (id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will permanently delete the leave request.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteLeaveRequest", "LeaveRequest")',
+                        type: 'POST',
+                        data: { id },
+                        success: function (res) {
+                            Swal.fire('Deleted!', res.message, 'success');
+                            loadLeaveRequests();
+                            resetForm();
+                        }
+                    });
+                }
+            });
+        }
+
+        function saveLeaveRequest() {
+            if (!validateForm()) return;
+
+            const formData = {
+                LeaveId: parseInt($('#leaveId').val()) || 0,
+                EmployeeId: $('#employeeId').val() ? parseInt($('#employeeId').val()) : null,
+                LeaveType: $('#leaveType').val(),
+                FromDate: $('#fromDate').val(),
+                ToDate: $('#toDate').val(),
+                Reason: $('#reason').val(),
+                Status: $('#status').val()
+            };
+
+            $.ajax({
+                url: '@Url.Action("AddOrUpdateLeaveRequest", "LeaveRequest")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function (res) {
+                    if (res && res.code === 0) { // 🔹 yahan "code" check kar rahe hain
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        resetForm();
+                        loadLeaveRequests(); // 🔹 turant table reload
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: (res && res.message) || 'Save failed'
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Save failed';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: msg
+                    });
+                }
+            });
+        }
+
+
+        function resetForm() {
+            $('#formTitle').text('Add Leave Request');
+            $('#leaveRequestForm')[0].reset();
+            $('#leaveId').val(0);
+            $('#status').val('Pending');
+            clearValidationErrors();
+        }
+
+        function validateForm() {
+            let valid = true;
+            clearValidationErrors();
+            if (!$('#employeeId').val()) { showFieldError('employeeId', 'Please select an employee'); valid = false; }
+            if (!$('#leaveType').val()) { showFieldError('leaveType', 'Please select leave type'); valid = false; }
+            if (!$('#fromDate').val()) { showFieldError('fromDate', 'Please select from date'); valid = false; }
+            if (!$('#toDate').val()) { showFieldError('toDate', 'Please select to date'); valid = false; }
+            if ($('#fromDate').val() && $('#toDate').val() && new Date($('#fromDate').val()) > new Date($('#toDate').val())) {
+                showFieldError('toDate', 'To date must be after from date'); valid = false;
+            }
+            if (!$('#reason').val().trim()) { showFieldError('reason', 'Please enter reason'); valid = false; }
+            return valid;
+        }
+
+        function showFieldError(fieldId, message) {
+            $('#' + fieldId + '-error').text(message);
+            $('#' + fieldId).addClass('is-invalid');
+        }
+        function clearValidationErrors() {
+            $('.text-danger').text('');
+            $('.form-control').removeClass('is-invalid');
+        }
+        function formatDate(val) {
+            if (!val) return '';
+            if (val.length === 10 && val[4] === '-' && val[7] === '-') return val;
+            let dt = new Date(val);
+            return !isNaN(dt) ? dt.toISOString().split('T')[0] : '';
+        }
+        function formatDateForInput(val) {
+            return formatDate(val);
+        }
+              function getStatusBadgeClass(status) {
+                switch (status.toLowerCase()) {
+                case 'approved': return 'badge-Approved';
+                case 'rejected': return 'badge-Rejected';
+                default: return 'badge-Pending';
+                }
+              }
+
+
+    </script>
+}

@@ -1,0 +1,205 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.DepartmentVM
+
+@{
+    ViewData["Title"] = "Department Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="border-bottom pb-2 mb-3">
+    <h4 class="modal-title text-center w-100 fw-bold text-success d-flex align-items-center justify-content-center">
+        <i class="bi bi-building me-2 fs-4"></i> Department Management
+    </h4>
+</div>
+<hr />
+
+<div class="row">
+    <!-- Left: Form -->
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Add / Edit Department</h5>
+            </div>
+            <div class="card-body">
+                <form id="departmentForm" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                    <input type="hidden" id="DepartmentId" name="DepartmentId" value="0" />
+
+                    <div class="form-group mb-3">
+                        <label asp-for="DepartmentName" class="form-label">Department Name</label>
+                        <input asp-for="DepartmentName" class="form-control" id="DepartmentName" name="DepartmentName" />
+                        <span asp-validation-for="DepartmentName" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Department List -->
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Department List</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover table-bordered table-sm align-middle">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th>ID</th>
+                            <th>Department Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="departmentTableBody">
+                        @if (ViewBag.Department is IEnumerable<DepartmentVM> departments && departments.Any())
+                        {
+                            foreach (var dept in departments)
+                            {
+                                <tr class="text-center">
+                                    <td>@dept.DepartmentId</td>
+                                    <td class="fw-bold">@dept.DepartmentName</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="@dept.DepartmentId" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@dept.DepartmentId" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No departments found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            loadDepartmentTable();
+
+            // Save (Add or Update) Department
+            $("#departmentForm").submit(function (e) {
+                e.preventDefault();
+                if (!$(this).valid()) {
+                    return;
+                }
+
+                let deptObj = {
+                    DepartmentId: parseInt($("#DepartmentId").val()) || 0,
+                    DepartmentName: $("#DepartmentName").val()
+                };
+
+                $.ajax({
+                    url: "/Department/AddDepartment",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(deptObj),
+                    success: function (res) {
+                        Swal.fire({
+                            icon: "success",
+                            title: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        resetForm();
+                        loadDepartmentTable();
+                    },
+                    error: function (err) {
+                        let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Something went wrong.";
+                        Swal.fire("Error!", msg, "error");
+                    }
+                });
+            });
+
+            // Edit Department
+            $(document).on("click", ".btn-edit", function () {
+                let id = $(this).data("id");
+
+                $.ajax({
+                    url: `/Department/GetDepartmentById?id=${id}`,
+                    type: "POST",
+                    data: { id: id },
+                    success: function (dept) {
+                        $("#DepartmentId").val(dept.departmentId);
+                        $("#DepartmentName").val(dept.departmentName);
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to fetch department details.", "error");
+                    }
+                });
+            });
+
+            // Delete Department
+            $(document).on("click", ".btn-delete", function () {
+                let id = $(this).data("id");
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/Department/Delete",
+                            type: "POST",
+                            data: { id: id },
+                            success: function (res) {
+                                if (res.success) {
+                                Swal.fire('Deleted!', res.message, 'success').then(() => location.reload());
+                                } else {
+                                    Swal.fire('Access Granted', res.message, 'success');
+                                }
+                                loadDepartmentTable();
+                            },
+                           error: function (xhr) {
+                                if (xhr.status === 403) {
+                                    var res = JSON.parse(xhr.responseText);
+                                    Swal.fire('Access Denied', res.message, 'error');
+                                } else {
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+            function resetForm() {
+                $("#DepartmentId").val(0);
+                $("#DepartmentName").val('');
+            }
+
+            function loadDepartmentTable() {
+                $.ajax({
+                    url: "/Department/Index",
+                    type: "GET",
+                    success: function (data) {
+                        var html = $(data).find("#departmentTableBody").html();
+                        $("#departmentTableBody").html(html);
+                    }
+                });
+            }
+        });
+    </script>
+}

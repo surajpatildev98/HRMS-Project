@@ -1,0 +1,309 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.UserVM
+
+@{
+    ViewData["Title"] = "User Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="border-bottom pb-2 mb-3">
+    <h4 class="modal-title text-center w-100 fw-bold text-success d-flex align-items-center justify-content-center">
+        <i class="bi bi-people-fill me-2 fs-4"></i> User Management
+    </h4>
+</div>
+<hr />
+
+<div class="row">
+    <!-- Left: Form -->
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Add / Edit User</h5>
+            </div>
+            <div class="card-body">
+                <form id="userForm" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                    <input type="hidden" id="UserID" name="UserID" value="0" />
+
+                    <div class="form-group mb-2">
+                        <label asp-for="EmployeeId">Employee</label>
+                        <select asp-for="EmployeeId" class="form-select" id="EmployeeId" name="EmployeeId">
+                            <option value="">Select Employee</option>
+                            @if (ViewBag.Employees != null)
+                            {
+                                @foreach (dynamic emp in ViewBag.Employees)
+                                {
+                                    <option value="@emp.value">@emp.text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="EmployeeId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="Username"></label>
+                        <input asp-for="Username" class="form-control" id="Username" name="Username" />
+                        <span asp-validation-for="Username" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="Password"></label>
+                        <input asp-for="Password" type="password" class="form-control" id="Password" name="Password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="Role"></label>
+                        <input asp-for="Role" class="form-control" id="Role" name="Role" readonly style="background-color: #f8f9fa;" />
+                        <small class="text-muted">Role will be auto-populated based on selected employee</small>
+                        <span asp-validation-for="Role" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-2">
+                        <label asp-for="IsActive"></label>
+                        <select asp-for="IsActive" class="form-select" id="IsActive" name="IsActive">
+                            <option value="true" class="badge bg-success">Active</option>
+                            <option value="false" class="badge bg-secondary">Inactive</option>
+                        </select>
+                        <span asp-validation-for="IsActive" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="IsAdmin"></label>
+                        <select asp-for="IsAdmin" class="form-select" id="IsAdmin" name="IsAdmin">
+                            <option value="true" class="badge bg-success">Yes</option>
+                            <option value="false" class=" badge bg-info">No</option>
+                        </select>
+                        <span asp-validation-for="IsAdmin" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: User List -->
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">User List</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover table-bordered table-sm align-middle">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th>Username</th>
+                            <th>Employee ID</th>
+                            <th>Password</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Admin</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        @if (ViewBag.User is IEnumerable<UserVM> users && users.Any())
+                        {
+                            foreach (var user in users)
+                            {
+                                <tr class="text-center">
+                                    <td>@user.Username</td>
+                                    <td>@user.EmployeeId</td>
+                                    <td>@user.Password</td> <!-- Optionally mask as needed -->
+                                    <td>@user.Role</td>
+                                    <td>
+                                        <span class="text-white px-2 py-1 rounded d-inline-block"
+                                              style="background-color: @(user.IsActive ?? false ? "#28a745" : "#6c757d")">
+                                            @(user.IsActive ?? false ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-white px-2 py-1 rounded d-inline-block"
+                                              style="background-color: @(user.IsAdmin ?? false ? "#007bff" : "#17a2b8")">
+                                            @(user.IsAdmin ?? false ? "Admin" : "User")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="@user.UserId" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@user.UserId" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No users found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            loadUserTable();
+
+            // Auto-populate role when employee is selected
+            $("#EmployeeId").change(function () {
+                var employeeId = $(this).val();
+                if (employeeId) {
+                    $.ajax({
+                        url: `/User/GetEmployeeById?employeeId=${employeeId}`,
+                        type: "GET",
+                        success: function (employee) {
+                            $("#Role").val(employee.role || '');
+                        },
+                        error: function () {
+                            $("#Role").val('');
+                            Swal.fire("Warning!", "Could not fetch employee role.", "warning");
+                        }
+                    });
+                } else {
+                    $("#Role").val('');
+                }
+            });
+
+            // Save (Add or Update) User
+            $("#userForm").submit(function (e) {
+                e.preventDefault();
+                if (!$(this).valid()) {
+                    return;
+                }
+
+                let userObj = {
+                    UserId: parseInt($("#UserID").val()) || 0,
+                    EmployeeId: $("#EmployeeId").val(),
+                    Username: $("#Username").val(),
+                    Password: $("#Password").val(),
+                    Role: $("#Role").val(),
+                    IsActive: $("#IsActive").val() === "true",
+                    IsAdmin: $("#IsAdmin").val() === "true"
+                };
+
+                $.ajax({
+                    url: "/User/AddUser",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(userObj),
+                    success: function (res) {
+                        Swal.fire({
+                            icon: "success",
+                            title: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        resetForm();
+                        loadUserTable();
+                    },
+                    error: function (xhr) {
+                                if (xhr.status === 403) {
+                                    var res = JSON.parse(xhr.responseText);
+                                    Swal.fire('Access Denied', res.message, 'error');
+                                } else {
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                    }
+                });
+            });
+
+            // Edit User
+            $(document).on("click", ".btn-edit", function () {
+                let id = $(this).data("id");
+
+                $.ajax({
+                    url: `/User/GetUserById?id=${id}`,
+                    type: "POST",
+                    data: { id: id },
+                    success: function (user) {
+                        $("#UserID").val(user.userId);
+                        $("#EmployeeId").val(user.employeeId);
+                        $("#Username").val(user.username);
+                        $("#Password").val(user.password);
+                        $("#Role").val(user.role);
+                        $("#IsActive").val(user.isActive ? "true" : "false");
+                        $("#IsAdmin").val(user.isAdmin ? "true" : "false");
+                    },
+                    error: function (xhr) {
+                                if (xhr.status === 403) {
+                                    var res = JSON.parse(xhr.responseText);
+                                    Swal.fire('Access Denied', res.message, 'error');
+                                } else {
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                    }
+                });
+            });
+
+            // Delete User
+            $(document).on("click", ".btn-delete", function () {
+                let id = $(this).data("id");
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/User/Delete",
+                            type: "POST",
+                            data: { id: id },
+                            success: function (res) {
+                                Swal.fire("Deleted!", res.message, "success");
+                                loadUserTable();
+                            },
+                            error: function (xhr) {
+                                if (xhr.status === 403) {
+                                    var res = JSON.parse(xhr.responseText);
+                                    Swal.fire('Access Denied', res.message, 'error');
+                                } else {
+                                    Swal.fire('Error', 'Something went wrong!', 'error');
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+            function resetForm() {
+                $("#UserID").val(0);
+                $("#EmployeeId").val('');
+                $("#Username").val('');
+                $("#Password").val('');
+                $("#Role").val('');
+                $("#IsActive").val('true');
+                $("#IsAdmin").val('false');
+            }
+
+            function loadUserTable() {
+                $.ajax({
+                    url: "/User/Index",
+                    type: "GET",
+                    success: function (data) {
+                        var html = $(data).find("#userTableBody").html();
+                        $("#userTableBody").html(html);
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,175 @@
+﻿@inject IConfiguration _conf
+
+
+@{
+    string AppName = _conf.GetValue<string>("AppName");
+    string Version = _conf.GetValue<string>("Version");
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - My_Core_Project</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- FontAwesome CSS -->
+    <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" asp-append-version="true" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- DataTables Bootstrap5 CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <!-- Your site and custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/My_Core_Project.styles.css" asp-append-version="true" />
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+            color: #141415 !important;
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+        }
+
+        footer {
+            background-color: #f8f9fa;
+            padding: 1rem 0;
+        }
+
+        .footer a {
+            text-decoration: none;
+            color: #141415;
+        }
+
+        body {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        main {
+            background-color: rgba(200, 220, 255, 0.4);
+            color: #000;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(100, 120, 180, 0.2);
+            backdrop-filter: blur(6px);
+            box-shadow: 0 6px 18px rgba(100, 120, 180, 0.3);
+        }
+
+        .input-error {
+            border: 2px solid red !important;
+        }
+
+        .field-validation-valid {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #000000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold text-white" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-building text-light"></i>
+                    <span class="text-info">@AppName</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+                        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-area="" asp-controller="User" asp-action="Index">User's</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-area="" asp-controller="Employee" asp-action="Index">Employees</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Masters
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Department" asp-action="Index">Departments</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Designation" asp-action="Index">Designations</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Attendance" asp-action="Index">Attendance</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="LeaveRequest" asp-action="Index">LeaveRequests</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Salary" asp-action="Index">PayOut</a></li>
+                            </ul>
+                        </li>
+
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <div class="card bg-success text-white px-3 py-2 rounded-3">
+                                    <a class="nav-link dropdown-toggle text-white p-0" href="#" role="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-circle"></i> @User.Identity.Name
+                                       
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-1">
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Profile" asp-action="Index">
+                                                <i class="bi bi-person-lines-fill"></i> Profile
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                        <li>
+                                            <form asp-controller="Login" asp-action="Logout" method="post" class="mb-0">
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-light" asp-controller="Login" asp-action="Index">Login</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    
+
+    <main role="main" class="pb-3">
+        <div class="container">
+            @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Home")
+            {
+                <img src="~/img/dash.jpg" alt="Dashboard Banner" class="img-fluid w-100" style="max-height: 500px; object-fit: cover;" />
+            }
+        </div>
+        @RenderBody()
+    </main>
+
+    <footer class="footer text-center mt-auto py-2" style="background-color: #000000; border-top: 1px solid #444;">
+        <div class="container">
+            <span class="text-light">
+                Version (@Version) &copy; 2025 - <strong>HRMS Core</strong> -
+                <a asp-controller="Home" asp-action="Privacy" class="text-decoration-none text-info">Privacy</a>
+            </span>
+        </div>
+    </footer>
+
+    <!-- JS: jQuery, Bootstrap, DataTables, SweetAlert2 -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

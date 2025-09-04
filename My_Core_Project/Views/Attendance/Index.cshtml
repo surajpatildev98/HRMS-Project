@@ -1,0 +1,421 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.AttendanceVM
+
+@{
+    ViewData["Title"] = "Attendance Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="border-bottom pb-2 mb-3">
+    <h4 class="modal-title text-center w-100 fw-bold text-success d-flex align-items-center justify-content-center">
+        <i class="bi bi-clock-history me-2 fs-4"></i> Attendance Management
+    </h4>
+</div>
+<hr />
+
+<div class="row">
+    <!-- Left: Form -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Add / Edit Attendance</h5>
+            </div>
+            <div class="card-body">
+                <form id="attendanceForm" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                    <input type="hidden" id="AttendanceId" name="AttendanceId" value="0" />
+
+                    <div class="form-group mb-3">
+                        <label asp-for="EmployeeId" class="form-label">Employee</label>
+                        <select asp-for="EmployeeId" class="form-select" id="EmployeeId" name="EmployeeId" required>
+                            <option value="">Select Employee</option>
+                            @if (ViewBag.Employees != null)
+                            {
+                                foreach (var emp in ViewBag.Employees)
+                                {
+                                    <option value="@emp.EmployeeId">@emp.FirstName @emp.LastName</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="EmployeeId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="AttendanceDate" class="form-label">Attendance Date</label>
+                        <input asp-for="AttendanceDate" type="date" class="form-control" id="AttendanceDate" name="AttendanceDate" required />
+                        <span asp-validation-for="AttendanceDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="InTime" class="form-label">In Time</label>
+                        <input asp-for="InTime" type="time" class="form-control" id="InTime" name="InTime" />
+                        <span asp-validation-for="InTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="OutTime" class="form-label">Out Time</label>
+                        <input asp-for="OutTime" type="time" class="form-control" id="OutTime" name="OutTime" />
+                        <span asp-validation-for="OutTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Status" class="form-label">Status</label>
+                        <select asp-for="Status" class="form-select" id="Status" name="Status" required>
+                            <option value="">Select Status</option>
+                            <option value="Present">Present</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Late">Late</option>
+                            <option value="Half Day">Half Day</option>
+                            <option value="Leave">Leave</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success" id="saveBtn">Save</button>
+                        <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Date Filter Card -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Filter by Date</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-group mb-2">
+                    <label for="filterDate" class="form-label">Select Date</label>
+                    <input type="date" class="form-control" id="filterDate" />
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-info btn-sm" id="filterBtn">Filter</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFilterBtn">Show All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Attendance List -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Attendance List</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered table-sm align-middle">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>ID</th>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>In Time</th>
+                                <th>Out Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            @if (ViewBag.Attendance != null && ViewBag.Attendance.Count > 0)
+                            {
+                                foreach (var attendance in ViewBag.Attendance)
+                                {
+                                    <tr class="text-center">
+                                        <td>@attendance.AttendanceId</td>
+                                        <td class="fw-bold text-primary">@attendance.EmployeeName</td>
+                                        <td>@(attendance.AttendanceDate is DateTime ? ((DateTime)attendance.AttendanceDate).ToString("yyyy-MM-dd") : attendance.AttendanceDate?.ToString())</td>
+                                        <td>@attendance.InTime</td>
+                                        <td>@attendance.OutTime</td>
+                                        <td>
+                                            @if (attendance.Status == "Present")
+                                            {
+                                                <span class="badge bg-success">Present</span>
+                                            }
+                                            else if (attendance.Status == "Absent")
+                                            {
+                                                <span class="badge bg-danger">Absent</span>
+                                            }
+                                            else if (attendance.Status == "Late")
+                                            {
+                                                <span class="badge bg-warning text-dark">Late</span>
+                                            }
+                                            else if (attendance.Status == "Half Day")
+                                            {
+                                                <span class="badge bg-info text-dark">Half Day</span>
+                                            }
+                                            else if (attendance.Status == "Leave")
+                                            {
+                                                <span class="badge bg-secondary">Leave</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-dark">@attendance.Status</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="@attendance.AttendanceId" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@attendance.AttendanceId" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="7" class="text-center text-muted">No attendance records found.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            // Load employees for dropdown (AJAX, overwrites server default)
+            function loadEmployees() {
+                $.ajax({
+                    url: "/Attendance/GetEmployees",
+                    type: "GET",
+                    success: function (employees) {
+                        let options = '<option value="">Select Employee</option>';
+                        $.each(employees, function (index, emp) {
+                            // Supports both EmployeeName prop (from API) and FirstName/LastName (from server)
+                            if (emp.employeeName) {
+                                options += `<option value="${emp.employeeId}">${emp.employeeName}</option>`;
+                            } else {
+                                options += `<option value="${emp.employeeId}">${emp.firstName} ${emp.lastName}</option>`;
+                            }
+                        });
+                        $("#EmployeeId").html(options);
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to load employees.", "error");
+                    }
+                });
+            }
+
+            // Set today's date as default
+            $("#AttendanceDate").val(new Date().toISOString().split('T')[0]);
+
+            // Save (Add or Update) Attendance
+            $("#attendanceForm").submit(function (e) {
+                e.preventDefault();
+                if (!$(this).valid()) {
+                    return;
+                }
+
+                let attendanceObj = {
+                    AttendanceId: parseInt($("#AttendanceId").val()) || 0,
+                    EmployeeId: $("#EmployeeId").val() ? parseInt($("#EmployeeId").val()) : null,
+                    AttendanceDate: $("#AttendanceDate").val(),
+                    InTime: $("#InTime").val() || null,
+                    OutTime: $("#OutTime").val() || null,
+                    Status: $("#Status").val()
+                };
+
+                let url = attendanceObj.AttendanceId === 0 ? "/Attendance/AddAttendance" : "/Attendance/UpdateAttendance";
+
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(attendanceObj),
+                    success: function (res) {
+                        Swal.fire({
+                            icon: "success",
+                            title: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        resetForm();
+                        loadAttendanceTable();
+                    },
+                    error: function (err) {
+                        let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Something went wrong.";
+                        Swal.fire("Error!", msg, "error");
+                    }
+                });
+            });
+
+            // Edit Attendance
+            $(document).on("click", ".btn-edit", function () {
+                let id = $(this).data("id");
+
+                $.ajax({
+                    url: `/Attendance/GetAttendanceById?id=${id}`,
+                    type: "POST",
+                    data: { id: id },
+                    success: function (attendance) {
+                        $("#AttendanceId").val(attendance.attendanceId);
+                        $("#EmployeeId").val(attendance.employeeId);
+                        $("#AttendanceDate").val(attendance.attendanceDate ? attendance.attendanceDate.split('T')[0] : '');
+                        $("#InTime").val(attendance.inTime);
+                        $("#OutTime").val(attendance.outTime);
+                        $("#Status").val(attendance.status);
+                        $("#saveBtn").text("Update");
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to fetch attendance details.", "error");
+                    }
+                });
+            });
+
+            // Delete Attendance
+            $(document).on("click", ".btn-delete", function () {
+                let id = $(this).data("id");
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/Attendance/Delete",
+                            type: "POST",
+                            data: { id: id },
+                            success: function (res) {
+                                Swal.fire("Deleted!", res.message, "success");
+                                loadAttendanceTable();
+                            },
+                            error: function (err) {
+                                let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Failed to delete attendance.";
+                                Swal.fire("Error!", msg, "error");
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Reset Form
+            $("#resetBtn").click(function () {
+                resetForm();
+            });
+
+            // Filter by Date
+            $("#filterBtn").click(function () {
+                let filterDate = $("#filterDate").val();
+                if (!filterDate) {
+                    Swal.fire("Warning!", "Please select a date to filter.", "warning");
+                    return;
+                }
+
+                $.ajax({
+                    url: "/Attendance/GetAttendanceByDate",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(filterDate),
+                    success: function (attendances) {
+                        updateAttendanceTable(attendances);
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to filter attendance records.", "error");
+                    }
+                });
+            });
+
+            // Clear Filter
+            $("#clearFilterBtn").click(function () {
+                $("#filterDate").val('');
+                loadAttendanceTable();
+            });
+
+            function resetForm() {
+                $("#AttendanceId").val(0);
+                $("#EmployeeId").val('');
+                $("#AttendanceDate").val(new Date().toISOString().split('T')[0]);
+                $("#InTime").val('');
+                $("#OutTime").val('');
+                $("#Status").val('');
+                $("#saveBtn").text("Save");
+            }
+
+            // AJAX load of attendance table (updates tbody only)
+            function loadAttendanceTable() {
+                $.ajax({
+                    url: "/Attendance/Index",
+                    type: "GET",
+                    success: function (data) {
+                        var html = $(data).find("#attendanceTableBody").html();
+                        $("#attendanceTableBody").html(html);
+                    }
+                });
+            }
+
+            // AJAX update of table by filter
+            function updateAttendanceTable(attendances) {
+                let html = '';
+                if (attendances && attendances.length > 0) {
+                    $.each(attendances, function (i, attendance) {
+                        let statusBadge = getStatusBadge(attendance.status);
+                        let attendanceDate = attendance.attendanceDate
+                            ? (attendance.attendanceDate.length > 10
+                                ? attendance.attendanceDate.substring(0, 10)
+                                : attendance.attendanceDate)
+                            : 'N/A';
+                        let inTime = attendance.inTime || 'N/A';
+                        let outTime = attendance.outTime || 'N/A';
+                        let employeeName = attendance.employeeName || attendance.firstName + ' ' + (attendance.lastName || '');
+                        html += `
+                            <tr class="text-center">
+                                <td>${attendance.attendanceId}</td>
+                                <td class="fw-bold text-primary">${employeeName}</td>
+                                <td>${attendanceDate}</td>
+                                <td>${inTime}</td>
+                                <td>${outTime}</td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="${attendance.attendanceId}" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="${attendance.attendanceId}" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html = '<tr><td colspan="7" class="text-center text-muted">No attendance records found for the selected date.</td></tr>';
+                }
+                $("#attendanceTableBody").html(html);
+            }
+
+            function getStatusBadge(status) {
+                switch (status) {
+                    case 'Present':
+                        return '<span class="badge bg-success">Present</span>';
+                    case 'Absent':
+                        return '<span class="badge bg-danger">Absent</span>';
+                    case 'Late':
+                        return '<span class="badge bg-warning text-dark">Late</span>';
+                    case 'Half Day':
+                        return '<span class="badge bg-info text-dark">Half Day</span>';
+                    case 'Leave':
+                        return '<span class="badge bg-secondary">Leave</span>';
+                    default:
+                        return '<span class="badge bg-light text-dark">' + (status || '') + '</span>';
+                }
+            }
+
+            // Initial loads
+            loadEmployees();
+        });
+    </script>
+}

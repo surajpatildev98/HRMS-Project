@@ -1,0 +1,17 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var message = ViewData["Message"]?.ToString() ?? "Access Denied";
+}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        Swal.fire({
+            icon: 'error',
+            title: 'Access Denied',
+            text: '@message',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            window.history.back(); // Pichle page pe bhej dega
+        });
+    });
+</script>

@@ -1,0 +1,232 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.DesignationVM
+
+@{
+    ViewData["Title"] = "Designation Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="border-bottom pb-2 mb-3">
+    <h4 class="modal-title text-center w-100 fw-bold text-success d-flex align-items-center justify-content-center">
+        <i class="bi bi-person-badge me-2 fs-4"></i> Designation Management
+    </h4>
+</div>
+<hr />
+
+<div class="row">
+    <!-- Left: Form -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Add / Edit Designation</h5>
+            </div>
+            <div class="card-body">
+                <form id="designationForm" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                    <input type="hidden" id="DesignationId" name="DesignationId" value="0" />
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Title" class="form-label">Designation Title</label>
+                        <input asp-for="Title" class="form-control" id="Title" name="Title" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="DepartmentId" class="form-label">Department</label>
+                        <select asp-for="DepartmentId" class="form-select" id="DepartmentId" name="DepartmentId">
+                            <option value="">Select Department</option>
+                        </select>
+                        <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Designation List -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Designation List</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover table-bordered table-sm align-middle">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th>ID</th>
+                            <th>Designation Title</th>
+                            <th>Department</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="designationTableBody">
+                        @if (ViewBag.Designation != null)
+                        {
+                            foreach (var designation in ViewBag.Designation)
+                            {
+                                <tr class="text-center">
+                                    <td>@designation.DesignationId</td>
+                                    <td class="fw-bold">@designation.Title</td>
+                                    <td class="text-info">@designation.DepartmentName</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit"
+                                                data-id="@designation.DesignationId"
+                                                data-title="@designation.Title"
+                                                data-department-id="@designation.DepartmentId"
+                                                title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@designation.DesignationId" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No designations found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            loadDepartments();
+            loadDesignationTable();
+
+            // Save (Add or Update) Designation
+            $("#designationForm").submit(function (e) {
+                e.preventDefault();
+                if (!$(this).valid()) {
+                    return;
+                }
+
+                let designationObj = {
+                    DesignationId: parseInt($("#DesignationId").val()) || 0,
+                    Title: $("#Title").val(),
+                    DepartmentId: $("#DepartmentId").val() ? parseInt($("#DepartmentId").val()) : null
+                };
+
+                $.ajax({
+                    url: "/Designation/AddDesignation",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(designationObj),
+                    success: function (res) {
+                        Swal.fire({
+                            icon: "success",
+                            title: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        resetForm();
+                        loadDesignationTable();
+                    },
+                    error: function (err) {
+                        let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Something went wrong.";
+                        Swal.fire("Error!", msg, "error");
+                    }
+                });
+            });
+
+            // Edit Designation
+            $(document).on("click", ".btn-edit", function () {
+                let id = $(this).data("id");
+
+                $.ajax({
+                    url: `/Designation/GetDesignationById?id=${id}`,
+                    type: "POST",
+                    data: { id: id },
+                    success: function (designation) {
+                        $("#DesignationId").val(designation.designationId);
+                        $("#Title").val(designation.title);
+                        $("#DepartmentId").val(designation.departmentId);
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to fetch designation details.", "error");
+                    }
+                });
+            });
+
+            // Delete Designation
+            $(document).on("click", ".btn-delete", function () {
+                let id = $(this).data("id");
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/Designation/Delete",
+                            type: "POST",
+                            data: { id: id },
+                            success: function (res) {
+                                Swal.fire("Deleted!", res.message, "success");
+                                loadDesignationTable();
+                            },
+                            error: function (err) {
+                                let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Failed to delete designation.";
+                                Swal.fire("Error!", msg, "error");
+                            }
+                        });
+                    }
+                });
+            });
+
+            function resetForm() {
+                $("#DesignationId").val(0);
+                $("#Title").val('');
+                $("#DepartmentId").val('');
+            }
+
+            function loadDesignationTable() {
+                $.ajax({
+                    url: "/Designation/Index",
+                    type: "GET",
+                    success: function (data) {
+                        var html = $(data).find("#designationTableBody").html();
+                        $("#designationTableBody").html(html);
+                    }
+                });
+            }
+
+            function loadDepartments() {
+                $.ajax({
+                    url: "/Designation/GetDepartments",
+                    type: "GET",
+                    success: function (departments) {
+                        var options = '<option value="">Select Department</option>';
+                        $.each(departments, function (index, dept) {
+                            options += `<option value="${dept.departmentId}">${dept.departmentName}</option>`;
+                        });
+                        $("#DepartmentId").html(options);
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to load departments.", "error");
+                    }
+                });
+            }
+        });
+    </script>
+}

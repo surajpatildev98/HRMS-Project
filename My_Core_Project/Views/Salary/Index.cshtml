@@ -1,0 +1,410 @@
+﻿@using My_Core_Project.Services
+@model My_Core_Project.Models.SalaryVM
+
+@{
+    ViewData["Title"] = "Salary Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="border-bottom pb-2 mb-3">
+    <h4 class="modal-title text-center w-100 fw-bold text-success d-flex align-items-center justify-content-center">
+        <i class="bi bi-cash-coin me-2 fs-4"></i> Salary Management
+    </h4>
+</div>
+<hr />
+
+<div class="row">
+    <!-- Left: Form -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Add / Edit Salary</h5>
+            </div>
+            <div class="card-body">
+                <form id="salaryForm" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                    <input type="hidden" id="SalaryId" name="SalaryId" value="0" />
+
+                    <div class="form-group mb-3">
+                        <label for="EmployeeId" class="form-label">Employee <span class="text-danger">*</span></label>
+                        <select id="EmployeeId" name="EmployeeId" class="form-select">
+                            <option value="">Select Employee</option>
+                        </select>
+                        <span class="text-danger" id="EmployeeId-error"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="BasicPay" class="form-label">Basic Pay <span class="text-danger">*</span></label>
+                        <input asp-for="BasicPay" class="form-control" id="BasicPay" name="BasicPay" type="number" step="0.01" />
+                        <span asp-validation-for="BasicPay" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Hra" class="form-label">HRA</label>
+                        <input asp-for="Hra" class="form-control" id="Hra" name="Hra" type="number" step="0.01" />
+                        <span asp-validation-for="Hra" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Da" class="form-label">DA</label>
+                        <input asp-for="Da" class="form-control" id="Da" name="Da" type="number" step="0.01" />
+                        <span asp-validation-for="Da" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Tax" class="form-label">Tax</label>
+                        <input asp-for="Tax" class="form-control" id="Tax" name="Tax" type="number" step="0.01" />
+                        <span asp-validation-for="Tax" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="NetPay" class="form-label">Net Pay</label>
+                        <input asp-for="NetPay" class="form-control" id="NetPay" name="NetPay" type="number" step="0.01" readonly />
+                        <span asp-validation-for="NetPay" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i>Save Salary
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Salary List -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Salary List</h5>
+                <div class="d-flex gap-2">
+                    <select id="employeeFilter" class="form-select form-select-sm" style="width: auto;">
+                        <option value="">All Employees</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-light" onclick="loadSalaryTable()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered table-sm align-middle">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>ID</th>
+                                <th>Employee</th>
+                                <th>Basic Pay</th>
+                                <th>HRA</th>
+                                <th>DA</th>
+                                <th>Tax</th>
+                                <th>Net Pay</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salaryTableBody">
+                            @if (ViewBag.Salaries is IEnumerable<My_Core_Project.Models.SalaryVM> salaries && salaries.Any())
+                            {
+                                foreach (var salary in salaries)
+                                {
+                                    <tr class="text-center">
+                                        <td>@salary.SalaryId</td>
+                                        <td class="fw-bold">Employee @salary.EmployeeId</td>
+                                        <td>₹@salary.BasicPayFormatted</td>
+                                        <td>₹@salary.HraFormatted</td>
+                                        <td>₹@salary.DaFormatted</td>
+                                        <td>₹@salary.TaxFormatted</td>
+                                        <td class="fw-bold text-success">₹@salary.NetPayFormatted</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="@salary.SalaryId" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="@salary.SalaryId" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">No salaries found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            loadEmployeeDropdown();
+            loadSalaryTable();
+
+            // Auto-calculate Net Pay
+            $('#BasicPay, #Hra, #Da, #Tax').on('input', function () {
+                calculateNetPay();
+            });
+
+            // Employee filter change
+            $('#employeeFilter').on('change', function () {
+                let employeeId = $(this).val();
+                if (employeeId) {
+                    loadSalariesByEmployee(employeeId);
+                } else {
+                    loadSalaryTable();
+                }
+            });
+
+            // Save (Add or Update) Salary
+            $("#salaryForm").submit(function (e) {
+                e.preventDefault();
+                if (!$(this).valid()) {
+                    return;
+                }
+
+                if (!$("#EmployeeId").val()) {
+                    Swal.fire("Error!", "Please select an employee.", "error");
+                    return;
+                }
+
+                let salaryObj = {
+                    SalaryId: parseInt($("#SalaryId").val()) || 0,
+                    EmployeeId: parseInt($("#EmployeeId").val()),
+                    BasicPay: parseFloat($("#BasicPay").val()) || 0,
+                    Hra: parseFloat($("#Hra").val()) || 0,
+                    Da: parseFloat($("#Da").val()) || 0,
+                    Tax: parseFloat($("#Tax").val()) || 0,
+                    NetPay: parseFloat($("#NetPay").val()) || 0
+                };
+
+                $.ajax({
+                    url: "/Salary/AddSalary",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(salaryObj),
+                    success: function (res) {
+                        Swal.fire({
+                            icon: "success",
+                            title: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        resetForm();
+                        loadSalaryTable();
+                        loadEmployeeDropdown(); // Refresh in case new employee was added
+                    },
+                    error: function (err) {
+                        let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Something went wrong.";
+                        Swal.fire("Error!", msg, "error");
+                    }
+                });
+            });
+
+            // Edit Salary
+            $(document).on("click", ".btn-edit", function () {
+                let id = $(this).data("id");
+
+                $.ajax({
+                    url: `/Salary/GetSalaryById?id=${id}`,
+                    type: "GET",
+                    success: function (salary) {
+                        $("#SalaryId").val(salary.salaryId);
+                        $("#EmployeeId").val(salary.employeeId);
+                        $("#BasicPay").val(salary.basicPay);
+                        $("#Hra").val(salary.hra);
+                        $("#Da").val(salary.da);
+                        $("#Tax").val(salary.tax);
+                        $("#NetPay").val(salary.netPay);
+                    },
+                    error: function () {
+                        Swal.fire("Error!", "Failed to fetch salary details.", "error");
+                    }
+                });
+            });
+
+            // Delete Salary
+            $(document).on("click", ".btn-delete", function () {
+                let id = $(this).data("id");
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/Salary/Delete",
+                            type: "POST",
+                            data: { id: id },
+                            success: function (res) {
+                                Swal.fire("Deleted!", res.message, "success");
+                                loadSalaryTable();
+                            },
+                            error: function (err) {
+                                let msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "Failed to delete salary.";
+                                Swal.fire("Error!", msg, "error");
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Load Employee Dropdown
+            function loadEmployeeDropdown() {
+                $.ajax({
+                    url: "/Salary/GetAllEmployees",
+                    type: "GET",
+                    success: function (employees) {
+                        let options = '<option value="">Select Employee</option>';
+                        let filterOptions = '<option value="">All Employees</option>';
+
+                        if (employees && employees.length > 0) {
+                            employees.forEach(function (emp) {
+                                let fullName = `${emp.firstName} ${emp.lastName}`;
+                                let designationText = emp.designationName
+                                    ? ` (${emp.designationName})`
+                                    : '';
+
+                                options += `<option value="${emp.employeeId}">${fullName}${designationText}</option>`;
+                                filterOptions += `<option value="${emp.employeeId}">${fullName}${designationText}</option>`;
+                            });
+                        }
+
+                        $("#EmployeeId").html(options);
+                        $("#employeeFilter").html(filterOptions);
+                    },
+                    error: function () {
+                        console.log("Failed to load employees");
+                    }
+                });
+            }
+
+
+            // Load Salary Table
+            function loadSalaryTable() {
+                $.ajax({
+                    url: "/Salary/GetAllSalaries",
+                    type: "GET",
+                    success: function (salaries) {
+                        let html = '';
+                        
+                        if (salaries && salaries.length > 0) {
+                            salaries.forEach(function (salary) {
+                                html += `
+                                    <tr class="text-center">
+                                        <td>${salary.salaryId}</td>
+                                                <td class="fw-bold">${salary.employeeName}<span class="text-muted small">(${salary.designationName})</span></td>
+                                        <td>₹${parseFloat(salary.basicPay).toFixed(2)}</td>
+                                        <td>₹${parseFloat(salary.hra).toFixed(2)}</td>
+                                        <td>₹${parseFloat(salary.da).toFixed(2)}</td>
+                                        <td>₹${parseFloat(salary.tax).toFixed(2)}</td>
+                                        <td class="fw-bold text-success">₹${parseFloat(salary.netPay).toFixed(2)}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="${salary.salaryId}" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="${salary.salaryId}" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            html = '<tr><td colspan="8" class="text-center text-muted">No salaries found.</td></tr>';
+                        }
+                        
+                        $("#salaryTableBody").html(html);
+                    },
+                    error: function () {
+                        $("#salaryTableBody").html('<tr><td colspan="8" class="text-center text-danger">Failed to load salaries.</td></tr>');
+                    }
+                });
+            }
+
+            // Load Salaries by Employee
+            function loadSalariesByEmployee(employeeId) {
+                $.ajax({
+                    url: `/Salary/GetSalariesByEmployeeId?id=${employeeId}`,
+                    type: "GET",
+                    success: function (salaries) {
+                        let html = '';
+                        
+                        if (salaries && salaries.length > 0) {
+                            salaries.forEach(function (salary) {
+                                html += `
+                                    <tr class="text-center">
+                                        <td>${salary.salaryId}</td>
+                                        <td class="fw-bold">Employee ${salary.employeeName}</td>
+                                        <td>₹${parseFloat(salary.basicPay).toFixed(2)}</td>
+                                        <td>₹${parseFloat(salary.hra).toFixed(2)}</td>
+                                        <td>₹${parseFloat(salary.da).toFixed(2)}</td>
+                                        <td>₹${parseFloat(salary.tax).toFixed(2)}</td>
+                                        <td class="fw-bold text-success">₹${parseFloat(salary.netPay).toFixed(2)}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="${salary.salaryId}" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="${salary.salaryId}" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            html = '<tr><td colspan="8" class="text-center text-muted">No salaries found for this employee.</td></tr>';
+                        }
+                        
+                        $("#salaryTableBody").html(html);
+                    },
+                    error: function () {
+                        $("#salaryTableBody").html('<tr><td colspan="8" class="text-center text-danger">Failed to load employee salaries.</td></tr>');
+                    }
+                });
+            }
+
+            // Calculate Net Pay
+            function calculateNetPay() {
+                let basicPay = parseFloat($("#BasicPay").val()) || 0;
+                let hra = parseFloat($("#Hra").val()) || 0;
+                let da = parseFloat($("#Da").val()) || 0;
+                let tax = parseFloat($("#Tax").val()) || 0;
+                
+                let netPay = basicPay + hra + da - tax;
+                $("#NetPay").val(netPay.toFixed(2));
+            }
+
+            // Reset Form
+            function resetForm() {
+                $("#SalaryId").val(0);
+                $("#EmployeeId").val('');
+                $("#BasicPay").val('');
+                $("#Hra").val('');
+                $("#Da").val('');
+                $("#Tax").val('');
+                $("#NetPay").val('');
+                $(".text-danger").text('');
+            }
+
+            // Make resetForm globally accessible
+            window.resetForm = resetForm;
+        });
+    </script>
+}
