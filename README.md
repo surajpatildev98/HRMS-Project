@@ -22,8 +22,7 @@ This project demonstrates core HR operations such as employee management, payrol
 
 ---
 
-## 📸 Screenshots
-(Add screenshots of your project UI here)
+
 
 ---
 
